@@ -24,6 +24,9 @@ export default function Lobby() {
     socket.current.on("connect", () => {
       console.log("Socket connected")
     })
+    socket.current.on("message", (data) => {
+      console.log("Received message:", data)
+    })
   }, []);
 
   return (

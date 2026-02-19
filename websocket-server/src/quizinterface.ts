@@ -14,22 +14,24 @@ export interface Question {
     correctAnswer: number;
 }
 
-enum QuizStateEnum {
-    LOBBY = "LOBBY",
-    PREQUESTION_COUNTDOWN = "PREQUESTION_COUNTDOWN",
-    QUESTION_REVEALED = "QUESTION_REVEALED",
-    QUESTION_ANSWERING = "QUESTION_ANSWERING",
-    ANSWER_REVEALED = "ANSWER_REVEALED",
-    LEADERBOARD = "LEADERBOARD",
-    FINISHED = "FINISHED",
-}
+export const QuizStateEnum = {
+    LOBBY: "LOBBY",
+    PREQUESTION_COUNTDOWN: "PREQUESTION_COUNTDOWN",
+    QUESTION_REVEALED: "QUESTION_REVEALED",
+    QUESTION_ANSWERING: "QUESTION_ANSWERING",
+    ANSWER_REVEALED: "ANSWER_REVEALED",
+    LEADERBOARD: "LEADERBOARD",
+    FINISHED: "FINISHED",
+} as const;
+
+export type QuizStateEnumType = (typeof QuizStateEnum)[keyof typeof QuizStateEnum];
 
 export interface QuizState {
     quizId: string;
     players: Record<string, Player>; // userId -> Player
     socketIdToUserId: Record<string, string>; // wsId -> userId
     currentQuestion: Omit<Question, "correctAnswer"> | null;
-    state: QuizStateEnum;
+    state: QuizStateEnumType;
     phaseEndsAt: number | null; // timestamp in ms when the current phase ends for countdowns,
     //  or null if not applicable
 }
