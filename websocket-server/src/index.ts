@@ -7,7 +7,13 @@ import type * as q from "./quizinterface.ts";
 
 const app: Express = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
 
 io.on("connection", (socket) => {
     console.log("a user connected");
