@@ -3,16 +3,21 @@ import express, { request, response } from "express";
 import type { Express } from "express";
 import { createServer } from "http";
 import { dirname, join } from "path";
-import * as q from "./quizinterface.ts";
+import * as qi from "./quizinterface.ts";
+import type { EventPayload, QuizEvents } from "./quizpayloads.ts";
 
-type SocketHandler = (io: Server, socket: Socket, data: any) => void;
-
-interface StateActions {
-    [eventName: string]: SocketHandler;
+type SocketHandler<T extends keyof QuizEvents> = (
+    io: Server, 
+    socket: Socket, 
+    data: EventPayload<T>
+) => void;
+    
+type StateActions = {
+    [K in keyof QuizEvents]?: SocketHandler<K>;
 }
 
-type stateMachine = {
-    [K in keyof typeof q.QuizStateEnum]: StateActions;
+type StateMachine = {
+    [K in qi.QuizStateEnumType]: StateActions;
 }
 
 const app: Express = express();
@@ -25,41 +30,41 @@ const io = new Server(httpServer, {
     }
 });
 
-const QuizState: q.QuizState = {
+const QuizState: qi.QuizState = {
     quizId: '0',
     players: {},    
     socketIdToUserId: {},
     currentQuestion: null,
-    state: q.QuizStateEnum.LOBBY,
+    state: qi.QuizStateEnum.LOBBY,
     phaseEndsAt: null,
 }
 
-const stateHandlers: stateMachine = {
-    [q.QuizStateEnum.LOBBY]: {
+const stateHandlers: StateMachine = {
+    [qi.QuizStateEnum.LOBBY]: {
         'player:join': (io, socket, data) => {
-            socket.emit("player:joined", { playerId: data.playerId });
-        },
-        'quiz:start': (io, socket, data) => {
-            io.emit("quiz:started", data);
+            // TypeScript knows 'data' has 'playerId' and 'name'
+            console.log(`Player ${data.name} joined.`);
+            socket.emit("player:joined", { id: data.playerId });
         },
     },
-    [q.QuizStateEnum.PREQUESTION_COUNTDOWN]: {},
-    [q.QuizStateEnum.QUESTION_REVEALED]: {},
-    [q.QuizStateEnum.QUESTION_ANSWERING]: {},
-    [q.QuizStateEnum.ANSWER_REVEALED]: {},
-    [q.QuizStateEnum.LEADERBOARD]: {},
-    [q.QuizStateEnum.FINISHED]: {},
-}
+    [qi.QuizStateEnum.QUESTION_ANSWERING]: {},
+    // The rest of the states...
+    [qi.QuizStateEnum.PREQUESTION_COUNTDOWN]: {},
+    [qi.QuizStateEnum.QUESTION_REVEALED]: {},
+    [qi.QuizStateEnum.ANSWER_REVEALED]: {},
+    [qi.QuizStateEnum.LEADERBOARD]: {},
+    [qi.QuizStateEnum.FINISHED]: {},
+};
 
 io.on("connection", (socket) => {
-    socket.data.state = q.QuizStateEnum.LOBBY;
+    socket.onAny((eventName, data) => { 
+        const currentState: qi.QuizStateEnumType = QuizState.state;
+        const stateLogic = stateHandlers[currentState as qi.QuizStateEnumType];
 
-    socket.onAny((eventName, data) => {
-        const currentState: q.QuizStateEnumType = socket.data.state;
-        const stateLogic = stateHandlers[currentState as q.QuizStateEnumType];
+        const handler = stateLogic[eventName as keyof QuizEvents];
 
-        if (stateLogic && stateLogic[eventName]) {
-            stateLogic[eventName](io, socket, data);
+        if (handler) {
+            handler(io, socket, data);
         } else {
             console.warn(`No handler for event ${eventName} in state ${currentState}`);
             socket.emit("error", `Event ${eventName} not allowed in state ${currentState}`);
