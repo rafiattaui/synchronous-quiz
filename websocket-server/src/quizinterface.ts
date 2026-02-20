@@ -1,6 +1,6 @@
 export interface Player {
     userId: string;
-    isOnline: boolean;
+    isConnected: boolean;
     name: string;
     score: number;
     selectedAnswer: number | null; // index of the selected answer, or null if not answered yet
