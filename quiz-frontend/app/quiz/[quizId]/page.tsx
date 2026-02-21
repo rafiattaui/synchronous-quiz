@@ -1,20 +1,22 @@
 'use client'
 
 import { useSocket } from '@/context/socketprovider';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
+import { Alert } from '@mantine/core';
 
-export default function QuizPage() {
+export default function QuizRoom({ params }: { params: Promise<{ quizId: string }>}) {
+    const { quizId } = use(params)
     const { socket } = useSocket();
     const [userId, setUserId] = useState(() => Math.floor(Math.random() * 1000).toString());
     const [players, setPlayers] = useState<any[]>([]);
     const [status, setStatus] = useState('Checking...');
-    const [quizId, setQuizId] = useState('1')
+    const [error, setError] = useState<string|null>(null);
 
     useEffect(() => {
         if (!socket) return;
 
         const onConnect = () => {
-            setStatus('Live');
+            setStatus('Connected');
             console.log("Connected:", socket.id);
             socket.emit('player:join', { name: `player${userId}`, userId: userId, quizId: quizId });
         };
@@ -37,7 +39,7 @@ export default function QuizPage() {
         socket.on("disconnect", onDisconnect);
         socket.on("player:joined", onJoinConfirm);
         socket.on("room:update", onRoomUpdate);
-        socket.on("error", (err) => console.error("Socket Error:", err));
+        socket.on("error",  (msg) => setError(msg));
         socket.on("debug", (msg) => console.log("Server Debug Message:", msg))
 
         // Set initial state
@@ -70,13 +72,26 @@ export default function QuizPage() {
 
     return (
         /* Added relative and z-50 to ensure clickability */
+        <>
+        {error && (
+            <Alert
+            variant='filled'
+            color="red"
+            >
+                {error}
+            </Alert>
+        )}
+
+        <main>
         <div className="relative z-50 p-6 max-w-2xl mx-auto space-y-6 bg-white shadow-lg rounded-xl border mt-10">
             <h1 className="text-2xl font-bold border-b pb-2">Quiz Debugger</h1>
             
             <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${status === 'Live' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                <div className={`w-3 h-3 rounded-full ${status === 'Connected' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                 <p className="font-mono font-medium">Status: {status}</p>
             </div>
+
+            <p className='font-mono font-medium'>Quiz ID: {quizId}</p>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button 
@@ -106,5 +121,7 @@ export default function QuizPage() {
                 </pre>
             </div>
         </div>
+        </main>
+        </>
     );
 }
