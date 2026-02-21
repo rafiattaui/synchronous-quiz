@@ -8,6 +8,7 @@ export default function QuizPage() {
     const [userId, setUserId] = useState(() => Math.floor(Math.random() * 1000).toString());
     const [players, setPlayers] = useState<any[]>([]);
     const [status, setStatus] = useState('Checking...');
+    const [quizId, setQuizId] = useState('1')
 
     useEffect(() => {
         if (!socket) return;
@@ -15,7 +16,7 @@ export default function QuizPage() {
         const onConnect = () => {
             setStatus('Live');
             console.log("Connected:", socket.id);
-            socket.emit('player:join', { name: `player${userId}`, userId: userId });
+            socket.emit('player:join', { name: `player${userId}`, userId: userId, quizId: quizId });
         };
 
         const onDisconnect = () => {

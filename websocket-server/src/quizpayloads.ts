@@ -1,10 +1,14 @@
 import { z } from "zod";
 
+const quizId = z.string().min(1);
+
 export const QuizSchemas = {
     'pong' : z.object({
+        quizId,
         time: z.number(),
     }),
     'player:join': z.object({
+        quizId,
         userId: z.string(), // use string for now, switch to uuid later
         name: z.string().min(2).max(32), 
     }),

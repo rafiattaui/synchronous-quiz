@@ -11,6 +11,7 @@ export const handlePlayerJoin = (
     data: EventPayload<'player:join'>,
     QuizState: qi.QuizState // Pass the state so the function can modify it
 ) => {
+    socket.join(QuizState.quizId);
     // check if player doesn't exist in quiz state.
     if (!QuizState.players[data.userId]) {
     // 1. Create new player if they don't exist
@@ -39,7 +40,7 @@ export const handlePlayerJoin = (
 /**
  * Handle a pong/heartbeat
  */
-export const handlePong = (io: Server, socket: Socket, data: any) => {
+export const handlePong = (io: Server, socket: Socket, data: any, state: qi.QuizState) => {
     console.log(`${socket.id} ponged!`);
 };
 
@@ -70,5 +71,5 @@ const roomUpdate = (QuizState: qi.QuizState, io: Server) => {
     const playerNames = Object.values(QuizState.players)
     .filter(player => player.isConnected === true)
     .map(player => player.name);
-    io.emit("room:update", { players: playerNames });
+    io.to(QuizState.quizId).emit("room:update", { players: playerNames });
 }

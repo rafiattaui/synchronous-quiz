@@ -9,6 +9,7 @@ export interface Player {
 
 export interface Question {
     questionId: string;
+    order: number;
     question: string;
     options: string[];
     correctAnswer: number;
@@ -31,6 +32,7 @@ export interface QuizState {
     players: Record<string, Player>; // userId -> Player
     socketIdToUserId: Record<string, string>; // wsId -> userId
     currentQuestion: Omit<Question, "correctAnswer"> | null;
+    questions: Array<Question>;
     state: QuizStateEnumType;
     phaseEndsAt: number | null; // timestamp in ms when the current phase ends for countdowns,
     //  or null if not applicable
