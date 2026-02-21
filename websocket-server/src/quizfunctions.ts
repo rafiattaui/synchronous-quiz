@@ -56,7 +56,7 @@ export const handlePlayerDisconnect = (
     if (userId) {
         const player = QuizState.players[userId];
         if (player) {
-            player.isConnected = false;
+            player.isConnected = false; // we dont delete the player instance because they may reconnect.
             delete QuizState.socketIdToUserId[socket.id];
             console.log(`User ${userId} marked as disconnected!`)
         }

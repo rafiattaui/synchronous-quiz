@@ -58,7 +58,6 @@ activeQuizStates.set('1', sampleQuizState)
 const stateHandlers: StateMachine = {
     [qi.QuizStateEnum.LOBBY]: {
         'player:join': (io, socket, data, quizState) => h.handlePlayerJoin(io, socket, data, quizState),
-        'pong': (io, socket, data, quizState) => h.handlePong(io, socket, data, quizState),
         'disconnect': (io, socket, data, quizState) => h.handlePlayerDisconnect(io, socket, data, quizState),
     },
     [qi.QuizStateEnum.QUESTION_ANSWERING]: {},
@@ -69,8 +68,19 @@ const stateHandlers: StateMachine = {
     [qi.QuizStateEnum.FINISHED]: {},
 };
 
+const globalHandlers: StateActions = {
+    'pong': (io, socket, data, quizState) => h.handlePong(io, socket, data, quizState),
+}
+
 io.on("connection", (socket) => {
     socket.onAny((eventName, rawBuffer: any) => {
+
+        // check if the event even exists at all
+        if (!(eventName in QuizSchemas)) {
+        console.warn(`Unknown Event: ${eventName}`);
+        return socket.emit("error", "The event sent is not recognized by the server.");
+        }
+
         // Every messsage sent by the client must provide a Quiz ID
         const quizId = rawBuffer?.quizId;
 
@@ -80,19 +90,19 @@ io.on("connection", (socket) => {
 
         const currentQuiz = activeQuizStates.get(quizId);
 
+        // check if there is currently a quiz session with that id
         if (!currentQuiz){
             console.log(`No quiz session for Quiz ID: ${quizId}.`)
             return socket.emit("error","No quiz session found for that Quiz ID.")
         }
-
-        const stateLogic = stateHandlers[currentQuiz.state];
-        const handler = stateLogic[eventName as keyof QuizEvents];
-
-        if (!(eventName in QuizSchemas)){
-            console.warn(`Unknown Event: ${eventName}`);
-            socket.emit("error", "Unknown Event for that message.")
+        // check global handlers for the handler first.
+        let handler = globalHandlers[eventName as keyof QuizEvents];
+        // if not, check through state handlers
+        if (!handler) {
+            const stateLogic = stateHandlers[currentQuiz.state];
+            handler = stateLogic[eventName as keyof QuizEvents];
         }
-
+        // once a handler is found
         if (handler) {
             const schema = QuizSchemas[eventName as keyof typeof QuizSchemas];
             const result = schema.safeParse(rawBuffer);
@@ -104,12 +114,14 @@ io.on("connection", (socket) => {
                 (handler as SocketHandler<any>)(io, socket, result.data, currentQuiz)
             }
 
-        } else {
+        } else { // if a handler isn't found
             console.warn(`No handler for event ${eventName} in state ${currentQuiz.state}`);
             socket.emit("error", `Event ${eventName} not allowed in state ${currentQuiz.state}`);
         }
     });
 
+
+    // disconnect events are seperate from onAny, thus they have to be declared seperately.
     socket.on("disconnect", (reason) =>{
         const discQuizState = Array.from(activeQuizStates.values()).find(session => 
             session.socketIdToUserId.hasOwnProperty(socket.id))

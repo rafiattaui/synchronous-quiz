@@ -18,7 +18,7 @@ export default function QuizRoom({ params }: { params: Promise<{ quizId: string 
         const onConnect = () => {
             setStatus('Connected');
             console.log("Connected:", socket.id);
-            socket.emit('player:join', { name: `player${userId}`, userId: userId, quizId: quizId });
+            socket.emit('player:join', { name: `player${userId}`, userId: userId, quizId: quizId});
         };
 
         const onDisconnect = () => {
