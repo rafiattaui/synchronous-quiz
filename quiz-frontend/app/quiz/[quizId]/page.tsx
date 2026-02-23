@@ -57,7 +57,7 @@ export default function QuizRoom({ params }: { params: Promise<{ quizId: string 
     // Test functions
     const pongServer = () => {
         console.log("Pinging...");
-        socket?.emit('pong', { time: Date.now() });
+        socket?.emit('pong', { time: Date.now(), quizId: quizId });
     };
 
     const socketDisconnect = () => {
