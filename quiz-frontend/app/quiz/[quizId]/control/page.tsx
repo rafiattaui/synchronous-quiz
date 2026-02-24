@@ -3,6 +3,9 @@
 import { useSocket } from "@/context/socketprovider";
 import { use, useEffect, useState } from "react"
 import { Alert } from "@mantine/core";
+import LobbyView from "@/components/LobbyView";
+import { AdminGrid } from "@/components/AdminGrid";
+import AdminView from "@/components/AdminView";
 
 export default function QuizControlPanel({ params }: { params: Promise<{ quizId: string }>}){
     const { quizId } = use(params);
@@ -69,6 +72,12 @@ export default function QuizControlPanel({ params }: { params: Promise<{ quizId:
         socket?.emit('state:next', { quizId: quizId });
     };
 
+    const pongServer = () => {
+        console.log("Pinging...");
+        socket?.emit('pong', { time: Date.now(), quizId: quizId });
+    };
+
+
     return (
             /* Added relative and z-50 to ensure clickability */
             <>
@@ -82,32 +91,8 @@ export default function QuizControlPanel({ params }: { params: Promise<{ quizId:
             )}
     
             <main>
-            <div className="relative z-50 p-6 max-w-2xl mx-auto space-y-6 bg-white shadow-lg rounded-xl border mt-10">
-                <h1 className="text-2xl font-bold border-b pb-2">Quiz Debugger (Control Panel)</h1>
-                
-                <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${status === 'Connected' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                    <p className="font-mono font-medium">Status: {status}</p>
-                </div>
-                <p className='font-mono font-medium'>Quiz ID: {quizId}</p>
-                <p className="font-mono font-medium">Quiz State: {state}</p>
-
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <button 
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all active:scale-95 shadow-sm"
-                    onClick={nextState}
-                >
-                    Next State
-                </button>
-            </div>
-    
-                <div className="mt-6">
-                    <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Debug Log (Players)</h2>
-                    <pre className="bg-slate-900 text-emerald-400 p-4 rounded-lg mt-2 overflow-x-auto text-xs leading-relaxed">
-                        {players.length > 0 ? JSON.stringify(players, null, 2) : "// No players in state"}
-                    </pre>
-                </div>
-            </div>
+                <AdminView state={state} status={status} quizId={quizId} players={players} pongServer={pongServer} isAdmin={true}/>
+                <AdminGrid nextState={nextState}/>
             </main>
             </>
         );  

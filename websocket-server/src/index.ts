@@ -40,6 +40,9 @@ const io = new Server(httpServer, {
 */
 const activeQuizStates = new Map<string, qi.QuizState>();
 
+// TODO - Create sample questions and implement questions page.
+const sampleQuizQuestions: Array<qi.Question> = []
+
 const sampleQuizState: qi.QuizState = {
     quizId: '1',
     players: {},
@@ -61,8 +64,8 @@ const stateHandlers: StateMachine = {
         'player:join': (io, socket, data, quizState) => h.handlePlayerJoin(io, socket, data, quizState),
         'disconnect': (io, socket, data, quizState) => h.handlePlayerDisconnect(io, socket, data, quizState),
     },
-    [qi.QuizStateEnum.QUESTION_ANSWERING]: {},
     [qi.QuizStateEnum.PREQUESTION_COUNTDOWN]: {},
+    [qi.QuizStateEnum.QUESTION_ANSWERING]: {},
     [qi.QuizStateEnum.QUESTION_REVEALED]: {},
     [qi.QuizStateEnum.ANSWER_REVEALED]: {},
     [qi.QuizStateEnum.LEADERBOARD]: {},
