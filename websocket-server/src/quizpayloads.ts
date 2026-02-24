@@ -14,7 +14,8 @@ export const QuizSchemas = {
     }),
     'disconnect': z.object({
         'reason': z.string(),
-    })
+    }),
+    'state:next': z.object({}),
 } as const;
 
 export type QuizEvents = {

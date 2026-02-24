@@ -7,7 +7,9 @@ import { Alert } from "@mantine/core";
 export default function QuizControlPanel({ params }: { params: Promise<{ quizId: string }>}){
     const { quizId } = use(params);
     const { socket } = useSocket();
-    const [userId, setUserId] = useState(() => Math.floor(Math.random() * 1000).toString());
+    const [state, setState] = useState<string>("");
+    // for testing purposes, hardcode user id to 1 which is default host in sample quiz state.
+    const [userId, setUserId] = useState("1");
     const [players, setPlayers] = useState<any[]>([]);
     const [status, setStatus] = useState('Checking...');
     const [error, setError] = useState<string|null>(null);
@@ -18,7 +20,7 @@ export default function QuizControlPanel({ params }: { params: Promise<{ quizId:
         const onConnect = () => {
             setStatus('Connected');
             console.log("Connected:", socket.id);
-            socket.emit('player:join', { name: `player${userId}`, userId: userId, quizId: quizId});
+            socket.emit('player:join', { name: `Admin`, userId: userId, quizId: quizId});
         };
 
         const onDisconnect = () => {
@@ -34,11 +36,17 @@ export default function QuizControlPanel({ params }: { params: Promise<{ quizId:
             setPlayers(data.players); // This makes the JSON.stringify work!
         };
 
+        const onStateUpdate = (data: { state: string }) => {
+            console.log("Quiz state updated:", data.state);
+            setState(data.state);
+        }
+
         // Listeners
         socket.on("connect", onConnect);
         socket.on("disconnect", onDisconnect);
         socket.on("player:joined", onJoinConfirm);
         socket.on("room:update", onRoomUpdate);
+        socket.on("state:update", onStateUpdate);
         socket.on("error",  (msg) => setError(msg));
         socket.on("debug", (msg) => console.log("Server Debug Message:", msg))
 
@@ -49,10 +57,17 @@ export default function QuizControlPanel({ params }: { params: Promise<{ quizId:
             socket.off("connect", onConnect);
             socket.off("disconnect", onDisconnect);
             socket.off("player:joined", onJoinConfirm);
-            socket.off("room:update");
+            socket.off("room:update", onRoomUpdate);
+            socket.off("state:update", onStateUpdate);
             socket.off("error");
         };
     }, [socket, userId]);
+
+    // control panel functions for testing
+    const nextState = () => {
+        console.log("Advancing to next state...");
+        socket?.emit('state:next', { quizId: quizId });
+    };
 
     return (
             /* Added relative and z-50 to ensure clickability */
@@ -62,7 +77,7 @@ export default function QuizControlPanel({ params }: { params: Promise<{ quizId:
                 variant='filled'
                 color="red"
                 >
-                    {error}
+                    {JSON.stringify(error)}
                 </Alert>
             )}
     
@@ -74,8 +89,17 @@ export default function QuizControlPanel({ params }: { params: Promise<{ quizId:
                     <div className={`w-3 h-3 rounded-full ${status === 'Connected' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                     <p className="font-mono font-medium">Status: {status}</p>
                 </div>
-    
                 <p className='font-mono font-medium'>Quiz ID: {quizId}</p>
+                <p className="font-mono font-medium">Quiz State: {state}</p>
+
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <button 
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all active:scale-95 shadow-sm"
+                    onClick={nextState}
+                >
+                    Next State
+                </button>
+            </div>
     
                 <div className="mt-6">
                     <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Debug Log (Players)</h2>

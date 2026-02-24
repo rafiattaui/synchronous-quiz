@@ -34,6 +34,7 @@ export interface QuizState {
     currentQuestion: Omit<Question, "correctAnswer"> | null;
     questions: Array<Question>;
     state: QuizStateEnumType;
+    hostUserId: string
     phaseEndsAt: number | null; // timestamp in ms when the current phase ends for countdowns,
     //  or null if not applicable
 }

@@ -2,6 +2,16 @@ import { Server, Socket } from "socket.io";
 import type { EventPayload } from "./quizpayloads.ts";
 import * as qi from "./quizinterface.ts";
 
+const QUIZ_STATE_TRANSITIONS: Record<qi.QuizStateEnumType, qi.QuizStateEnumType> = {
+    [qi.QuizStateEnum.LOBBY]: qi.QuizStateEnum.PREQUESTION_COUNTDOWN,
+    [qi.QuizStateEnum.PREQUESTION_COUNTDOWN]: qi.QuizStateEnum.QUESTION_ANSWERING,
+    [qi.QuizStateEnum.QUESTION_ANSWERING]: qi.QuizStateEnum.ANSWER_REVEALED,
+    [qi.QuizStateEnum.ANSWER_REVEALED]: qi.QuizStateEnum.LEADERBOARD,
+    [qi.QuizStateEnum.QUESTION_REVEALED]: qi.QuizStateEnum.LEADERBOARD,
+    [qi.QuizStateEnum.LEADERBOARD]: qi.QuizStateEnum.FINISHED,
+    [qi.QuizStateEnum.FINISHED]: qi.QuizStateEnum.LOBBY, // Loop back to lobby after finished
+}
+
 /**
  * Handle a player joining the lobby
  */
@@ -34,6 +44,7 @@ export const handlePlayerJoin = (
         QuizState.socketIdToUserId[socket.id] = data.userId; 
         console.log(`Player ${data.name} rejoined.`);
     };
+    syncState(io, QuizState)
     roomUpdate(QuizState, io);
 };
 
@@ -58,7 +69,7 @@ export const handlePlayerDisconnect = (
         if (player) {
             player.isConnected = false; // we dont delete the player instance because they may reconnect.
             delete QuizState.socketIdToUserId[socket.id];
-            console.log(`User ${userId} marked as disconnected!`)
+            console.log(`${player.name} marked as disconnected!`)
         }
     } else {
         console.log(`Unknown webSocket ${socket.id} attempted to disconnect.`)
@@ -67,9 +78,34 @@ export const handlePlayerDisconnect = (
     roomUpdate(QuizState, io);
 }
 
+export const handleNextState = (
+    io: Server, socket: Socket, data: any, QuizState: qi.QuizState
+) => {
+    const userId = QuizState.socketIdToUserId[socket.id];
+    const isAdmin = userId === QuizState.hostUserId;
+    if (!isAdmin){
+        socket.emit("error", {err: "Only the host can advance the quiz state."});
+        return;
+    }
+    const currentState = QuizState.state
+    const nextState = QUIZ_STATE_TRANSITIONS[currentState];
+    if (nextState) {
+        QuizState.state = nextState;
+        syncState(io, QuizState)
+    } else {
+        socket.emit("error", {err: "Invalid state transition attempted."});
+    }
+}
+
 const roomUpdate = (QuizState: qi.QuizState, io: Server) => {
     const playerNames = Object.values(QuizState.players)
     .filter(player => player.isConnected === true)
     .map(player => player.name);
     io.to(QuizState.quizId).emit("room:update", { players: playerNames });
+}
+
+const syncState = (
+    io: Server, QuizState: qi.QuizState
+) => {
+    io.to(QuizState.quizId).emit('state:update', {'state': QuizState.state});
 }

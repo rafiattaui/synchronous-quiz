@@ -7,6 +7,7 @@ import { Alert } from '@mantine/core';
 export default function QuizRoom({ params }: { params: Promise<{ quizId: string }>}) {
     const { quizId } = use(params)
     const { socket } = useSocket();
+    const [state, setState] = useState("")
     const [userId, setUserId] = useState(() => Math.floor(Math.random() * 1000).toString());
     const [players, setPlayers] = useState<any[]>([]);
     const [status, setStatus] = useState('Checking...');
@@ -34,11 +35,17 @@ export default function QuizRoom({ params }: { params: Promise<{ quizId: string 
             setPlayers(data.players); // This makes the JSON.stringify work!
         };
 
+        const onStateUpdate = (data: { state: string }) => {
+            console.log("Quiz state updated:", data.state);
+            setState(data.state);
+        }
+
         // Listeners
         socket.on("connect", onConnect);
         socket.on("disconnect", onDisconnect);
         socket.on("player:joined", onJoinConfirm);
         socket.on("room:update", onRoomUpdate);
+        socket.on("state:update", onStateUpdate);
         socket.on("error",  (msg) => setError(msg));
         socket.on("debug", (msg) => console.log("Server Debug Message:", msg))
 
@@ -92,6 +99,7 @@ export default function QuizRoom({ params }: { params: Promise<{ quizId: string 
             </div>
 
             <p className='font-mono font-medium'>Quiz ID: {quizId}</p>
+            <p className='font-mono font-medium'>Quiz State: {state}</p>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button 

@@ -47,6 +47,7 @@ const sampleQuizState: qi.QuizState = {
     currentQuestion: null,
     questions: [],
     state: qi.QuizStateEnum.LOBBY,
+    hostUserId: "1",
     phaseEndsAt: null,
 }
 
@@ -70,6 +71,7 @@ const stateHandlers: StateMachine = {
 
 const globalHandlers: StateActions = {
     'pong': (io, socket, data, quizState) => h.handlePong(io, socket, data, quizState),
+    'state:next': (io, socket, data, quizState) => h.handleNextState(io, socket, data, quizState)
 }
 
 io.on("connection", (socket) => {
