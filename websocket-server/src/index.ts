@@ -57,10 +57,7 @@ activeQuizStates.set('1', sampleQuizState)
 * Stores valid quiz messages, and maps them to their function.
 */
 const stateHandlers: StateMachine = {
-    [qi.QuizStateEnum.LOBBY]: {
-        'player:join': (io, socket, data, quizState) => h.handlePlayerJoin(io, socket, data, quizState),
-        'disconnect': (io, socket, data, quizState) => h.handlePlayerDisconnect(io, socket, data, quizState),
-    },
+    [qi.QuizStateEnum.LOBBY]: {},
     [qi.QuizStateEnum.PREQUESTION_COUNTDOWN]: {},
     [qi.QuizStateEnum.QUESTION_ANSWERING]: {},
     [qi.QuizStateEnum.QUESTION_REVEALED]: {},
@@ -71,7 +68,9 @@ const stateHandlers: StateMachine = {
 
 const globalHandlers: StateActions = {
     'pong': (io, socket, data, quizState) => h.handlePong(io, socket, data, quizState),
-    'state:next': (io, socket, data, quizState) => h.handleNextState(io, socket, data, quizState)
+    'state:next': (io, socket, data, quizState) => h.handleNextState(io, socket, data, quizState),
+    'player:join': (io, socket, data, quizState) => h.handlePlayerJoin(io, socket, data, quizState),
+    'disconnect': (io, socket, data, quizState) => h.handlePlayerDisconnect(io, socket, data, quizState),
 }
 
 io.on("connection", (socket) => {

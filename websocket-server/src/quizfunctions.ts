@@ -97,6 +97,10 @@ export const handleNextState = (
     }
 }
 
+// These functions should only be called by the state handlers,
+// as they assume the quiz state has already been validated and modified accordingly. 
+// They emit updates to all clients in the quiz room based on the current quiz state.
+
 const roomUpdate = (QuizState: qi.QuizState, io: Server) => {
     const playerNames = Object.values(QuizState.players)
     .filter(player => player.isConnected === true)
