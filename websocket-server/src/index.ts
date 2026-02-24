@@ -40,9 +40,6 @@ const io = new Server(httpServer, {
 */
 const activeQuizStates = new Map<string, qi.QuizState>();
 
-// TODO - Create sample questions and implement questions page.
-const sampleQuizQuestions: Array<qi.Question> = []
-
 const sampleQuizState: qi.QuizState = {
     quizId: '1',
     players: {},
