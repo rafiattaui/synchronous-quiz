@@ -19,32 +19,34 @@ export const handlePlayerJoin = (
     io: Server, 
     socket: Socket, 
     data: EventPayload<'player:join'>,
-    QuizState: qi.QuizState // Pass the state so the function can modify it
+    QuizState: qi.QuizState
 ) => {
+    const { userId, name } = data;
+    // TODO - Check state and only allow joining in the lobby state. 
+    // TODO - Consider allowing rejoining if disconnected in non-lobby states.
+    // Join the Socket.io room immediately
     socket.join(QuizState.quizId);
-    // check if player doesn't exist in quiz state.
-    if (!QuizState.players[data.userId]) {
-    // 1. Create new player if they don't exist
-    QuizState.socketIdToUserId[socket.id] = data.userId;
-    QuizState.players[data.userId] = {
-        userId: data.userId,
-        name: data.name,
-        isConnected: true,
-        score: 0,
-        selectedAnswer: null,
-        answerTime: null
-    };
-    const playerNames = Object.values(QuizState.players).map(player=>player.name);
-    console.log(`Player ${data.name} joined.`);
 
+    // Update or Create player
+    if (!QuizState.players[userId]) {
+        QuizState.players[userId] = {
+            userId,
+            name,
+            isConnected: true,
+            score: 0,
+            selectedAnswer: null,
+            answerTime: null
+        };
+        console.log(`[LOBBY] ${name} created.`);
     } else {
-        // 2. If they DO exist, change their status to isConnected
-        QuizState.players[data.userId]!.isConnected = true;
-        // Update the socket mapping in case they joined with a new socket ID
-        QuizState.socketIdToUserId[socket.id] = data.userId; 
-        console.log(`Player ${data.name} rejoined.`);
-    };
-    syncState(io, QuizState)
+        QuizState.players[userId].isConnected = true;
+        console.log(`[LOBBY] ${name} rejoined.`);
+    }
+
+    // Always map the CURRENT socket to this user
+    QuizState.socketIdToUserId[socket.id] = userId;
+
+    syncState(io, QuizState);
     roomUpdate(QuizState, io);
 };
 
@@ -52,7 +54,7 @@ export const handlePlayerJoin = (
  * Handle a pong/heartbeat
  */
 export const handlePong = (io: Server, socket: Socket, data: any, state: qi.QuizState) => {
-    console.log(`${socket.id} ponged!`);
+    console.log(`[PONG] ${socket.id} ponged!`);
 };
 
 /**
@@ -60,23 +62,24 @@ export const handlePong = (io: Server, socket: Socket, data: any, state: qi.Quiz
  */
 
 export const handlePlayerDisconnect = (
-    io: Server, socket: Socket, data: any,  QuizState: qi.QuizState
+    io: Server, 
+    socket: Socket, 
+    data: { reason?: string }, 
+    QuizState: qi.QuizState
 ) => {
-    // find the player instance based on its socket.id
     const userId = QuizState.socketIdToUserId[socket.id];
-    if (userId) {
-        const player = QuizState.players[userId];
-        if (player) {
-            player.isConnected = false; // we dont delete the player instance because they may reconnect.
-            delete QuizState.socketIdToUserId[socket.id];
-            console.log(`${player.name} marked as disconnected!`)
-        }
-    } else {
-        console.log(`Unknown webSocket ${socket.id} attempted to disconnect.`)
-        socket.emit("error", {err: "Identity does not exist in player database."})
+    
+    if (userId && QuizState.players[userId]) {
+        // Only mark disconnected if the CURRENT socket matches the one we have on file
+        // This prevents a 'rejoin' from being immediately overwritten by an old 'disconnect'
+        QuizState.players[userId].isConnected = false;
+        delete QuizState.socketIdToUserId[socket.id];
+        
+        console.log(`[DISCONNECT] User ${userId} went offline.`);
     }
+
     roomUpdate(QuizState, io);
-}
+};
 
 export const handleNextState = (
     io: Server, socket: Socket, data: any, QuizState: qi.QuizState
@@ -86,7 +89,7 @@ export const handleNextState = (
     if (!isAdmin){
         socket.emit("error", {err: "Only the host can advance the quiz state."});
         return;
-    }
+    } // TODO - Only allow manual transitions on specific states.
     const currentState = QuizState.state
     const nextState = QUIZ_STATE_TRANSITIONS[currentState];
     if (nextState) {
