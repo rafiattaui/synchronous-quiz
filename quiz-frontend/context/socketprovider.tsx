@@ -6,7 +6,7 @@ import { socket } from '@/lib/socket';
 
 const SocketContext = createContext({
   isConnected: false,
-  socket: socket
+  socket: socket,
 });
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
@@ -37,7 +37,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   if (!mounted) {
-    return <>{children}</>
+    return <>{children}</>;
   }
 
   return (

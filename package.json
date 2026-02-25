@@ -1,10 +1,12 @@
 {
-	"devDependencies": {
-		"@types/express": "^5.0.6",
-		"@types/node": "^25.3.0"
-	},
-	"dependencies": {
-		"express": "^5.2.1",
-		"socket.io": "^4.8.3"
-	}
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
 }
