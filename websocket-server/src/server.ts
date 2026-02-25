@@ -8,6 +8,7 @@ import { QuizSchemas } from './quizpayloads.ts';
 import * as z from 'zod';
 import * as h from './quizfunctions.ts';
 
+// State Machine types and handlers
 type SocketHandler<T extends keyof QuizEvents> = (
   io: Server,
   socket: Socket,
