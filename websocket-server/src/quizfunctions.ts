@@ -10,18 +10,20 @@ const QUIZ_STATE_TRANSITIONS: Record<qi.QuizStateEnumType, qi.QuizStateEnumType>
     [qi.QuizStateEnum.QUESTION_REVEALED]: qi.QuizStateEnum.LEADERBOARD,
     [qi.QuizStateEnum.LEADERBOARD]: qi.QuizStateEnum.FINISHED,
     [qi.QuizStateEnum.FINISHED]: qi.QuizStateEnum.LOBBY, // Loop back to lobby after finished
+    // consider calling functions to validate the state change first and then actually change state?
 }
 
 /**
  * Handle a player joining the lobby
  */
-export const handlePlayerJoin = (
+export const handlePlayerJoin = async (
     io: Server, 
     socket: Socket, 
     data: EventPayload<'player:join'>,
     QuizState: qi.QuizState
 ) => {
     const { userId, name } = data;
+    // currently allows user joining at any state.
     // TODO - Check state and only allow joining in the lobby state. 
     // TODO - Consider allowing rejoining if disconnected in non-lobby states.
     // Join the Socket.io room immediately
