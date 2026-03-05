@@ -4,6 +4,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
-    "target": "ESNext"
+    "target": "ESNext",
+    "exactOptionalPropertyTypes": false
   }
 }
